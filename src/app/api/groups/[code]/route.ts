@@ -1,6 +1,9 @@
 import { get, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const base = (code: string) => `momentum/groups/${code.toUpperCase()}`;
 async function read<T>(pathname: string, fallback: T): Promise<T> {
   const result = await get(pathname, { access: "private" });
@@ -8,13 +11,19 @@ async function read<T>(pathname: string, fallback: T): Promise<T> {
   return JSON.parse(await new Response(result.stream).text()) as T;
 }
 export async function GET(_: Request, { params }: { params: Promise<{ code: string }> }) {
+  try {
   const { code } = await params; const root = base(code);
   const group = await read<Record<string, unknown> | null>(`${root}/group.json`, null);
   if (!group) return NextResponse.json({ error: "그룹을 찾을 수 없어요." }, { status: 404 });
   const [messages, routine] = await Promise.all([read(`${root}/messages.json`, []), read(`${root}/routine.json`, {})]);
   return NextResponse.json({ group, messages, routine });
+  } catch (error) {
+    console.error("Failed to read Momentum group", error);
+    return NextResponse.json({ error: "저장된 그룹을 읽지 못했어요. Functions 로그를 확인해 주세요." }, { status: 500 });
+  }
 }
 export async function POST(request: Request, { params }: { params: Promise<{ code: string }> }) {
+  try {
   const { code } = await params; const root = base(code); const body = await request.json();
   const group = await read<Record<string, unknown> | null>(`${root}/group.json`, null);
   if (!group) return NextResponse.json({ error: "그룹을 찾을 수 없어요." }, { status: 404 });
@@ -30,4 +39,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
     await put(`${root}/routine.json`, JSON.stringify(routine), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" });
   } else return NextResponse.json({ error: "알 수 없는 요청이에요." }, { status: 400 });
   return GET(request, { params: Promise.resolve({ code }) });
+  } catch (error) {
+    console.error("Failed to update Momentum group", error);
+    return NextResponse.json({ error: "저장소에 변경 사항을 저장하지 못했어요. Functions 로그를 확인해 주세요." }, { status: 500 });
+  }
 }

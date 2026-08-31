@@ -1,7 +1,11 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
+  try {
   const body = await request.json();
   const title = String(body.title ?? "").trim();
   const place = String(body.place ?? "").trim();
@@ -15,4 +19,8 @@ export async function POST(request: Request) {
     put(`momentum/groups/${code}/routine.json`, "{}", { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" }),
   ]);
   return NextResponse.json(group, { status: 201 });
+  } catch (error) {
+    console.error("Failed to create Momentum group", error);
+    return NextResponse.json({ error: "저장소에 약속을 만들지 못했어요. Vercel 환경 변수와 Functions 로그를 확인해 주세요." }, { status: 500 });
+  }
 }
