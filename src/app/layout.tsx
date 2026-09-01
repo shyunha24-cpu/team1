@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { ChatLocationPanel } from "@/components/chat-location-panel";
 import "./globals.css";
 import "./chat.css";
 import "./forms.css";
@@ -8,6 +9,7 @@ import "./switch.css";
 import "./dashboard.css";
 import "./location.css";
 import "./map.css";
+import "./viewer.css";
 
 export const metadata: Metadata = { title: "Momentum | 약속을 지키는 루틴", description: "친구와 함께 약속을 지키는 출발 루틴 서비스" };
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -28,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }`}
         </Script>
         {children}
+        <ChatLocationPanel />
       </body>
     </html>
   );

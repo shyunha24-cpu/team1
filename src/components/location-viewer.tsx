@@ -1,0 +1,14 @@
+"use client";
+import "leaflet/dist/leaflet.css";
+import { useEffect, useRef, useState } from "react";
+import type L from "leaflet";
+
+type Point = { latitude: number; longitude: number };
+const distance = (a: Point, b: Point) => { const rad = Math.PI / 180; const dLat = (b.latitude - a.latitude) * rad; const dLon = (b.longitude - a.longitude) * rad; const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.latitude * rad) * Math.cos(b.latitude * rad) * Math.sin(dLon / 2) ** 2; return 6371 * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)); };
+export function LocationViewer({ target }: { target: Point }) {
+  const node = useRef<HTMLDivElement>(null); const map = useRef<L.Map | null>(null); const currentMarker = useRef<L.Marker | null>(null); const [current, setCurrent] = useState<Point | null>(null); const [status, setStatus] = useState("보라색 핀이 약속 장소예요.");
+  useEffect(() => { let active = true; import("leaflet").then(({ default: Leaflet }) => { if (!active || !node.current) return; const instance = Leaflet.map(node.current).setView([target.latitude, target.longitude], 16); Leaflet.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(instance); const icon = Leaflet.divIcon({ className: "", html: '<span class="osm-marker target-marker">⌖</span>', iconSize: [30, 30], iconAnchor: [15, 15] }); Leaflet.marker([target.latitude, target.longitude], { icon }).addTo(instance).bindPopup("약속 장소").openPopup(); map.current = instance; }); return () => { active = false; map.current?.remove(); map.current = null; }; }, [target.latitude, target.longitude]);
+  const locate = () => { setStatus("현재 위치를 확인하는 중…"); navigator.geolocation.getCurrentPosition(async p => { const point = { latitude: p.coords.latitude, longitude: p.coords.longitude }; setCurrent(point); const Leaflet = (await import("leaflet")).default; const icon = Leaflet.divIcon({ className: "", html: '<span class="osm-marker current-marker">●</span>', iconSize: [24, 24], iconAnchor: [12, 12] }); if (currentMarker.current) currentMarker.current.setLatLng([point.latitude, point.longitude]); else currentMarker.current = Leaflet.marker([point.latitude, point.longitude], { icon }).addTo(map.current!).bindPopup("현재 위치"); map.current?.fitBounds([[point.latitude, point.longitude], [target.latitude, target.longitude]], { padding: [40, 40] }); setStatus("현재 위치와 약속 장소를 함께 표시했어요."); }, () => setStatus("현재 위치를 보려면 위치 권한을 허용해 주세요."), { enableHighAccuracy: true, timeout: 10000 }); };
+  const km = current ? distance(current, target) : null;
+  return <div><div ref={node} className="osm-map viewer-map"/><div className="viewer-status"><span>{status}{km !== null && ` 직선거리 약 ${km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`}`}</span><button onClick={locate}>현재 위치 비교</button></div></div>;
+}
