@@ -40,10 +40,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
     const messages = await read<Array<Record<string, unknown>>>(`${root}/messages.json`, []);
     messages.push({ id: crypto.randomUUID(), text: text.slice(0, 500), name, createdAt: new Date().toISOString() });
     await put(`${root}/messages.json`, JSON.stringify(messages), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
+    const routine = await read<Record<string, boolean>>(`${root}/routine.json`, {});
+    return NextResponse.json({ group, messages, routine });
   } else if (body.type === "routine") {
     const name = String(body.name ?? "익명").trim().slice(0, 20) || "익명"; const routine = await read<Record<string, boolean>>(`${root}/routine.json`, {});
     routine[name] = Boolean(body.done);
     await put(`${root}/routine.json`, JSON.stringify(routine), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
+    const messages = await read<Array<Record<string, unknown>>>(`${root}/messages.json`, []);
+    return NextResponse.json({ group, messages, routine });
   } else if (body.type === "request-delete") {
     const email = String(body.email ?? "").trim().toLowerCase();
     if (group.ownerEmail !== email) return NextResponse.json({ error: "그룹 주최자만 삭제를 요청할 수 있어요." }, { status: 403 });
