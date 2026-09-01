@@ -1,0 +1,1 @@
+.share-row{display:flex;gap:8px;margin-top:18px}.share-row button{flex:1;min-height:40px;border:1px solid rgba(255,255,255,.22);border-radius:11px;color:#f0edff;background:rgba(255,255,255,.09);font-size:12px;font-weight:bold}.share-row button:hover{background:rgba(255,255,255,.16)}.copy-note{display:block;margin-top:9px;color:#cfc5ff;font-size:11px}
