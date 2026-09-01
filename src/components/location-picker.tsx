@@ -1,0 +1,11 @@
+"use client";
+import { useRef, useState } from "react";
+
+type Point = { latitude: number; longitude: number };
+export function LocationPicker({ value, onChange }: { value: Point | null; onChange: (point: Point) => void }) {
+  const [current, setCurrent] = useState<Point | null>(null); const [status, setStatus] = useState("현재 위치를 불러오면 지도에서 약속 장소를 터치할 수 있어요."); const map = useRef<HTMLDivElement>(null);
+  const findCurrent = () => { if (!navigator.geolocation) return setStatus("이 브라우저는 위치 기능을 지원하지 않아요."); setStatus("현재 위치를 확인하는 중…"); navigator.geolocation.getCurrentPosition(p => { const point = { latitude: p.coords.latitude, longitude: p.coords.longitude }; setCurrent(point); setStatus("파란 점이 현재 위치예요. 지도에서 약속 장소를 터치하세요."); }, () => setStatus("위치 권한을 허용해 주세요. 위치 없이도 장소 이름으로 등록할 수 있어요."), { enableHighAccuracy: true, timeout: 10000 }); };
+  const setTarget = (event: React.PointerEvent<HTMLDivElement>) => { if (!current || !map.current) return; const box = map.current.getBoundingClientRect(); const x = Math.max(0, Math.min(1, (event.clientX - box.left) / box.width)); const y = Math.max(0, Math.min(1, (event.clientY - box.top) / box.height)); const point = { latitude: current.latitude + (0.5 - y) * 0.035, longitude: current.longitude + (x - 0.5) * 0.045 }; onChange(point); setStatus("보라색 핀이 약속 장소예요. 필요하면 다시 터치해 옮길 수 있어요."); };
+  const position = (point: Point) => current ? { left: `${50 + (point.longitude - current.longitude) / .045 * 100}%`, top: `${50 - (point.latitude - current.latitude) / .035 * 100}%` } : { left: "50%", top: "50%" };
+  return <section className="location-picker glass"><div className="location-title"><div><strong>GPS 약속 위치</strong><small>{status}</small></div><button type="button" onClick={findCurrent}>내 위치</button></div><div ref={map} className={`touch-map ${current ? "ready" : ""}`} onPointerDown={setTarget} role="application" aria-label="약속 위치 선택 지도"><span className="map-hint">{current ? "지도를 터치해 약속 위치 지정" : "내 위치 버튼을 눌러 시작"}</span>{current && <span className="map-pin current" style={position(current)} title="현재 위치">●<i>현재</i></span>}{value && <span className="map-pin target" style={position(value)} title="약속 위치">⌖<i>약속</i></span>}</div>{value && <p className="coordinate">약속 좌표: {value.latitude.toFixed(5)}, {value.longitude.toFixed(5)}</p>}</section>;
+}
