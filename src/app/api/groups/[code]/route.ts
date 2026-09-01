@@ -27,7 +27,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
   const { code } = await params; const root = base(code); const body = await request.json();
   const group = await read<Record<string, unknown> | null>(`${root}/group.json`, null);
   if (!group) return NextResponse.json({ error: "그룹을 찾을 수 없어요." }, { status: 404 });
-  if (body.type === "message") {
+  if (body.type === "join") {
+    const email = String(body.email ?? "").trim().toLowerCase();
+    if (!email) return NextResponse.json({ error: "로그인 계정을 확인해 주세요." }, { status: 400 });
+    const members = Array.isArray(group.members) ? group.members as string[] : [];
+    if (group.ownerEmail !== email && !members.includes(email)) members.push(email);
+    group.members = members;
+    await put(`${root}/group.json`, JSON.stringify(group), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
+  } else if (body.type === "message") {
     const text = String(body.text ?? "").trim(); const name = String(body.name ?? "익명").trim().slice(0, 20) || "익명";
     if (!text) return NextResponse.json({ error: "메시지를 입력해 주세요." }, { status: 400 });
     const messages = await read<Array<Record<string, unknown>>>(`${root}/messages.json`, []);
