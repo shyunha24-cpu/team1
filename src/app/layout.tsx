@@ -13,7 +13,7 @@ import "./viewer.css";
 import "./membership.css";
 import "./delete.css";
 
-export const metadata: Metadata = { title: "Momentum | 약속을 지키는 루틴", description: "친구와 함께 약속을 지키는 출발 루틴 서비스" };
+export const metadata: Metadata = { title: "약속 | 약속을 지키는 루틴", description: "친구와 함께 약속을 지키는 출발 루틴 서비스" };
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko">
