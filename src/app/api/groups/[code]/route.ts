@@ -1,4 +1,4 @@
-import { get, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +44,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
     const name = String(body.name ?? "익명").trim().slice(0, 20) || "익명"; const routine = await read<Record<string, boolean>>(`${root}/routine.json`, {});
     routine[name] = Boolean(body.done);
     await put(`${root}/routine.json`, JSON.stringify(routine), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
+  } else if (body.type === "request-delete") {
+    const email = String(body.email ?? "").trim().toLowerCase();
+    if (group.ownerEmail !== email) return NextResponse.json({ error: "그룹 주최자만 삭제를 요청할 수 있어요." }, { status: 403 });
+    group.deletionRequested = true; group.deletionApprovals = [];
+    await put(`${root}/group.json`, JSON.stringify(group), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
+  } else if (body.type === "approve-delete") {
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const members = Array.isArray(group.members) ? group.members as string[] : [];
+    if (!members.includes(email)) return NextResponse.json({ error: "참여자만 삭제를 승인할 수 있어요." }, { status: 403 });
+    if (!group.deletionRequested) return NextResponse.json({ error: "삭제 요청이 아직 없어요." }, { status: 400 });
+    const approvals = Array.isArray(group.deletionApprovals) ? group.deletionApprovals as string[] : [];
+    if (!approvals.includes(email)) approvals.push(email); group.deletionApprovals = approvals;
+    await put(`${root}/group.json`, JSON.stringify(group), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
+  } else if (body.type === "delete") {
+    const email = String(body.email ?? "").trim().toLowerCase();
+    if (group.ownerEmail !== email) return NextResponse.json({ error: "그룹 주최자만 삭제할 수 있어요." }, { status: 403 });
+    const members = Array.isArray(group.members) ? group.members as string[] : [];
+    const approvals = Array.isArray(group.deletionApprovals) ? group.deletionApprovals as string[] : [];
+    if (!group.deletionRequested || !members.every(member => approvals.includes(member))) return NextResponse.json({ error: "모든 참여자의 승인이 필요해요." }, { status: 409 });
+    await del([`${root}/group.json`, `${root}/messages.json`, `${root}/routine.json`]);
+    return NextResponse.json({ deleted: true });
   } else return NextResponse.json({ error: "알 수 없는 요청이에요." }, { status: 400 });
   return GET(request, { params: Promise.resolve({ code }) });
   } catch (error) {
