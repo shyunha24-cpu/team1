@@ -32,11 +32,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
     if (!text) return NextResponse.json({ error: "메시지를 입력해 주세요." }, { status: 400 });
     const messages = await read<Array<Record<string, unknown>>>(`${root}/messages.json`, []);
     messages.push({ id: crypto.randomUUID(), text: text.slice(0, 500), name, createdAt: new Date().toISOString() });
-    await put(`${root}/messages.json`, JSON.stringify(messages), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" });
+    await put(`${root}/messages.json`, JSON.stringify(messages), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
   } else if (body.type === "routine") {
     const name = String(body.name ?? "익명").trim().slice(0, 20) || "익명"; const routine = await read<Record<string, boolean>>(`${root}/routine.json`, {});
     routine[name] = Boolean(body.done);
-    await put(`${root}/routine.json`, JSON.stringify(routine), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" });
+    await put(`${root}/routine.json`, JSON.stringify(routine), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 });
   } else return NextResponse.json({ error: "알 수 없는 요청이에요." }, { status: 400 });
   return GET(request, { params: Promise.resolve({ code }) });
   } catch (error) {

@@ -14,9 +14,9 @@ export async function POST(request: Request) {
   const code = crypto.randomUUID().replaceAll("-", "").slice(0, 6).toUpperCase();
   const group = { code, title, place, when, createdAt: new Date().toISOString() };
   await Promise.all([
-    put(`momentum/groups/${code}/group.json`, JSON.stringify(group), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" }),
-    put(`momentum/groups/${code}/messages.json`, "[]", { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" }),
-    put(`momentum/groups/${code}/routine.json`, "{}", { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json" }),
+    put(`momentum/groups/${code}/group.json`, JSON.stringify(group), { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 }),
+    put(`momentum/groups/${code}/messages.json`, "[]", { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 }),
+    put(`momentum/groups/${code}/routine.json`, "{}", { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType: "application/json", cacheControlMaxAge: 0 }),
   ]);
   return NextResponse.json(group, { status: 201 });
   } catch (error) {
